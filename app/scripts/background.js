@@ -4,9 +4,6 @@ var lastUpdated = {};
 
 chrome.browserAction.setPopup({popup:"popup.html"});
 chrome.runtime.onInstalled.addListener(function(info) {
-    // if(info.details == "update" || info.details == "install") {
-        // chrome.browserAction.setBadgeText({text:"1"});
-    // }
 })
 
 
@@ -86,4 +83,17 @@ chrome.runtime.onMessage.addListener(
       else
         sendResponse(null);
     }
+
+    if(request.action == 'getSid')
+    {
+      chrome.cookies.get({url: request.serverInstance, name: "sid"}, sidCookie => {
+        if (!sidCookie) {
+          sendResponse(null)
+          return;
+        }
+        sendResponse(sidCookie.value);
+      })
+      return true
+    }
+
   });

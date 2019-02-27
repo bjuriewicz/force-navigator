@@ -44,6 +44,8 @@
         "https://*.force.com/*",
         "https://*.salesforce.com/*",
         "https://*.cloudforce.com/*",
-        "storage"
-    ]
+        "storage",
+        "cookies"
+    ],
+    "content_security_policy": "script-src 'self'; connect-src 'self' *; object-src 'self'"
 }

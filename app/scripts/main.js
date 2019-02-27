@@ -15,14 +15,13 @@ var sfnav = (function() {
   var metaData = {};
   var serverInstance = getServerInstance();
   var cmds = {};
-  var isCtrl = false;
   var clientId, omnomnom, hash;
-  var loaded=false;
   var shortcut;
   var sid;
   var SFAPI_VERSION = 'v33.0';
   var ftClient;
   var customObjects = {};
+  var shitItsLightning;
   var META_DATATYPES = {
     "AUTONUMBER": {name:"AutoNumber",code:"auto", params:0},
     "CHECKBOX": {name:"Checkbox",code:"cb", params:0},
@@ -279,9 +278,7 @@ var sfnav = (function() {
     }
     req.send();
   }
-  function getVisible(){
-    return document.getElementById("sfnav_shadow").style.visibility;
-  }
+  
   function isVisible() {
     return document.getElementById("sfnav_shadow").style.visibility !== 'hidden';
   }
@@ -357,7 +354,6 @@ var sfnav = (function() {
     var err = document.createElement("div");
     err.className = 'sfnav_child sfnav-error-wrapper';
 
-    var errorText = '';
     err.appendChild(document.createTextNode('Error! '));
     err.appendChild(document.createElement('br'));
     for(var i = 0;i<text.length;i++)
@@ -448,10 +444,6 @@ var sfnav = (function() {
 
     return words;
   }
-  function setColor (_posi, _color, _forg){
-    outp.childNodes[_posi].style.background = _color;
-    outp.childNodes[_posi].style.color = _forg;
-  }
 
   function invokeCommand(cmd, newtab, event) {
     if(event != 'click' && typeof cmds[cmd] != 'undefined' && (cmds[cmd].url != null || cmds[cmd].url == ''))
@@ -481,11 +473,6 @@ var sfnav = (function() {
         window.location.href = serverInstance + '/ui/setup/Setup';
         return true;
       }
-    if(cmd.toLowerCase().substring(0,3) == 'cf ')
-      {
-        createField(cmd);
-        return true;
-      }
     if(cmd.toLowerCase().substring(0,9) == 'login as ')
       {
         loginAs(cmd);
@@ -495,203 +482,7 @@ var sfnav = (function() {
     return false;
   }
 
-  function updateField(cmd)
-  {
-    var arrSplit = cmd.split(' ');
-    var dataType = '';
-    var fieldMetadata;
 
-    if(arrSplit.length >= 3)
-      {
-        for(var key in META_DATATYPES)
-          {
-            if(META_DATATYPES[key].name.toLowerCase() === arrSplit[3].toLowerCase())
-              {
-                dataType = META_DATATYPES[key].name;
-                break;
-              }
-          }
-
-        var sObjectName = arrSplit[1];
-        var fieldName = arrSplit[2];
-        var helpText = null;
-        var typeLength = arrSplit[4];
-        var rightDecimals, leftDecimals;
-        if(parseInt(arrSplit[5]) != NaN )
-          {
-            rightDecimals = parseInt(arrSplit[5]);
-            leftDecimals = typeLength;
-          }
-        else
-          {
-            leftDecimals = 0;
-            rightDecimals = 0;
-          }
-
-
-
-
-        ftClient.queryByName('CustomField', fieldName, sObjectName, function(success) {
-          addSuccess(success);
-          fieldMeta = new  forceTooling.CustomFields.CustomField(arrSplit[1], arrSplit[2], dataType, null, arrSplit[4], parseInt(leftDecimals),parseInt(rightDecimals),null);
-
-          ftClient.update('CustomField', fieldMeta,
-            function(success) {
-              console.log(success);
-              addSuccess(success);
-            },
-            function(error) {
-              console.log(error);
-              addError(error.responseJSON);
-            });
-        },
-          function(error)
-          {
-            addError(error.responseJSON);
-          });
-
-
-      }
-  }
-
-  function createField(cmd)
-  {
-    var arrSplit = cmd.split(' ');
-    var dataType = '';
-    var fieldMetadata;
-
-    if(arrSplit.length >= 3)
-      {
-        //  forceTooling.Client.create(whatever)
-        /*
-           for(var key in META_DATATYPES)
-           {
-           if(META_DATATYPES[key].name.toLowerCase() === arrSplit[3].toLowerCase())
-           {
-           dataType = META_DATATYPES[key].name;
-           break;
-           }
-           }
-         */
-        dataType = META_DATATYPES[arrSplit[3].toUpperCase()].name;
-        var sObjectName = arrSplit[1];
-        var sObjectId = null;
-        if(typeof customObjects[sObjectName.toLowerCase()] !== 'undefined')
-          {
-            sObjectId = customObjects[sObjectName.toLowerCase()].Id;
-            sObjectName += '__c';
-          }
-        var fieldName = arrSplit[2];
-        var helpText = null;
-        var typeLength = arrSplit[4];
-        var rightDecimals, leftDecimals;
-        if(parseInt(arrSplit[5]) != NaN )
-          {
-            rightDecimals = parseInt(arrSplit[5]);
-            leftDecimals = parseInt(typeLength);
-          }
-        else
-          {
-            leftDecimals = 0;
-            rightDecimals = 0;
-          }
-
-        var fieldMeta;
-
-        switch(arrSplit[3].toUpperCase())
-        {
-          case 'AUTONUMBER':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, null,null,null,null,null);
-          break;
-          case 'CHECKBOX':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, null,null,null,null,null);
-          break;
-          case 'CURRENCY':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, leftDecimals, rightDecimals,null,null,null);
-          break;
-          case 'DATE':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, null,null,null,null,null);
-          break;
-          case 'DATETIME':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, null,null,null,null,null);
-          break;
-          case 'EMAIL':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, null,null,null,null,null);
-          break;
-          case 'FORMULA':
-
-          break;
-          case 'GEOLOCATION':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, null, arrSplit[4],null,null,null);
-          break;
-          case 'HIERARCHICALRELATIONSHIP':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, null,null,null,arrSplit[4],null);
-          break;
-          case 'LOOKUP':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, null,null,null,arrSplit[4],null);
-          break;
-          case 'MASTERDETAIL':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, null,null,null,arrSplit[4],null);
-          break;
-          case 'NUMBER':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, leftDecimals, rightDecimals,null,null,null);
-          break;
-          case 'PERCENT':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, leftDecimals, rightDecimals,null,null,null);
-          break;
-          case 'PHONE':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, null,null,null,null,null);
-          break;
-          case 'PICKLIST':
-          var plVal = [];
-          plVal.push(new forceTooling.CustomFields.PicklistValue('CHANGEME'));
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, null,null,plVal,null,null);
-          break;
-          case 'PICKLISTMS':
-          var plVal = [];
-          plVal.push(new forceTooling.CustomFields.PicklistValue('CHANGEME'));
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, null,null,plVal,null,null);
-          break;
-          case 'ROLLUPSUMMARY':
-
-          break;
-          case 'TEXT':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, typeLength, null,null,null,null,null);
-          break;
-          case 'TEXTENCRYPTED':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, null,null,null,null,null);
-          break;
-          case 'TEXTAREA':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, typeLength, null,null,null,null,null);
-          break;
-          case 'TEXTAREALONG':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, typeLength, null,null,null,null,arrSplit[4]);
-          break;
-          case 'TEXTAREARICH':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, typeLength, null,null,null,null,arrSplit[4]);
-          break;
-          case 'URL':
-          fieldMeta = new  forceTooling.CustomFields.CustomField(sObjectName, sObjectId, fieldName, dataType, null, null, null,null,null,null,null);
-          break;
-
-        }
-
-        ftClient.setSessionToken(getCookie('sid'), SFAPI_VERSION, serverInstance + '');
-        showLoadingIndicator();
-        ftClient.create('CustomField', fieldMeta,
-          function(success) {
-            console.log(success);
-            hideLoadingIndicator();
-            addSuccess(success);
-          },
-          function(error) {
-            console.log(error);
-            hideLoadingIndicator();
-            addError(error.responseJSON);
-          });
-      }
-
-  }
 
   function loginAs(cmd) {
     var arrSplit = cmd.split(' ');
@@ -769,7 +560,9 @@ var sfnav = (function() {
         act = {
           key: obj.name,
           keyPrefix: obj.keyPrefix,
-          url: serverInstance + '/' + obj.keyPrefix
+          url: shitItsLightning 
+            ? serverInstance + '/lightning/o/' + obj.name + '/list'
+            : serverInstance + '/' + obj.keyPrefix
         }
         cmds['List ' + mRecord.labelPlural] = act;
         cmds['List ' + mRecord.labelPlural]['synonyms'] = [obj.name];
@@ -812,14 +605,17 @@ var sfnav = (function() {
     // session ID is different and useless in VF
     if(location.origin.indexOf("visual.force") !== -1) return;
 
-    sid = "Bearer " + getCookie('sid');
-    var theurl = getServerInstance() + '/services/data/' + SFAPI_VERSION + '/sobjects/';
+    sid = "Bearer " + sid;
+    console.log('sid:: '+ sid)
+    var theurl = serverInstance + '/services/data/' + SFAPI_VERSION + '/sobjects/';
+    console.log('theurl: ' + theurl)
 
     cmds['Refresh Metadata'] = {};
     cmds['Setup'] = {};
     var req = new XMLHttpRequest();
     req.open("GET", theurl, true);
     req.setRequestHeader("Authorization", sid);
+    req.setRequestHeader("url", theurl);
     req.onload = function(response) {
       getMetadata(response.target.responseText);
 
@@ -907,9 +703,13 @@ var sfnav = (function() {
     store('Store Commands', cmds);
   }
 
+
   function getCookie(c_name)
   {
+
+    console.log('cookies')
     var i,x,y,ARRcookies=document.cookie.split(";");
+    console.log(ARRcookies)
     for (i=0;i<ARRcookies.length;i++)
       {
         x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
@@ -923,28 +723,29 @@ var sfnav = (function() {
   }
   function getServerInstance()
   {
+    console.log(' get server instance: ' );
     var url = location.origin + "";
     var urlParseArray = url.split(".");
     var i;
     var returnUrl;
 
-    if(url.indexOf("salesforce") != -1)
-      {
-        returnUrl = url.substring(0, url.indexOf("salesforce")) + "salesforce.com";
-        return returnUrl;
-      }
-
-    if(url.indexOf("cloudforce") != -1)
-      {
-        returnUrl = url.substring(0, url.indexOf("cloudforce")) + "cloudforce.com";
-        return returnUrl;
-      }
-
-    if(url.indexOf("visual.force") != -1)
-      {
-        returnUrl = 'https://' + urlParseArray[1] + '';
-        return returnUrl;
-      }
+    if(url.indexOf(".my.salesforce") != -1) {
+      returnUrl = url
+    }
+    else if(url.indexOf("salesforce") != -1) {
+      returnUrl = url.substring(0, url.indexOf("salesforce")) + "salesforce.com";
+    }
+    else if(url.indexOf("cloudforce") != -1) {
+      returnUrl = url.substring(0, url.indexOf("cloudforce")) + "cloudforce.com";
+    }
+    else if(url.indexOf("visual.force") != -1) {
+      returnUrl = 'https://' + urlParseArray[1] + '';
+    }
+    else if(url.indexOf("lightning.force") != -1) {
+      shitItsLightning = true;
+      returnUrl = url.substring(0, url.indexOf("lightning.force")) + "my.salesforce.com";
+    }
+    console.log('returl: ' + returnUrl);
     return returnUrl;
   }
 
@@ -1104,62 +905,73 @@ var sfnav = (function() {
       });
 
   }
+
+  function getSid() {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage({action: "getSid", serverInstance}, res => {
+        if(res)
+          resolve(res)
+        else
+          reject('Something wrong: ' + res)
+      })
+    })
+  }
   function init()
   {
+    console.log('from init')
     ftClient = new forceTooling.Client();
-    ftClient.setSessionToken(getCookie('sid'), SFAPI_VERSION, serverInstance + '');
-
-    var div = document.createElement('div');
-    div.setAttribute('id', 'sfnav_search_box');
-    var loaderURL = chrome.extension.getURL("images/ajax-loader.gif");
-    var logoURL = chrome.extension.getURL("images/128.png");
-    div.innerHTML = `
-    <div class="sfnav_wrapper">
-      <input type="text" id="sfnav_quickSearch" autocomplete="off"/>
-      <img id="sfnav_loader" src= "${loaderURL}"/>
-      <img id="sfnav_logo" src= "${logoURL}"/>
-    </div>
-    <div class="sfnav_shadow" id="sfnav_shadow"/>
-    <div class="sfnav_output" id="sfnav_output"/>`;
-
-    document.body.appendChild(div);
-    outp = document.getElementById("sfnav_output");
-    hideLoadingIndicator();
-    initShortcuts();
-
-    omnomnom = getCookie('sid');
-
-    clientId = omnomnom.split('!')[0];
-
-    hash = clientId + '!' + omnomnom.substring(omnomnom.length - 10, omnomnom.length);
-    // chrome.storage.local.get(['Commands','Metadata'], function(results) {
-    //     console.log(results);
-    // });
+    getSid().then(res => {
 
 
-    chrome.runtime.sendMessage({
-      action:'Get Commands', 'key': hash},
-      function(response) {
-        cmds = response;
-        if(cmds == null || cmds.length == 0) {
-          cmds = {};
-          metaData = {};
-          getAllObjectMetadata();
-        } else {
-        }
-      });
+      console.log('getSid then', res)
+      sid = res;
 
-    // chrome.runtime.sendMessage({action:'Get Metadata', 'key': hash},
-    //   function(response) {
-    //     metaData = response;
-    // });
+      if (sid == null || sid.split('!').length != 2) return;
+    
+      ftClient.setSessionToken(sid, SFAPI_VERSION, serverInstance + '');
+
+      var div = document.createElement('div');
+      div.setAttribute('id', 'sfnav_search_box');
+      var loaderURL = chrome.extension.getURL("images/ajax-loader.gif");
+      var logoURL = chrome.extension.getURL("images/128.png");
+      div.innerHTML = `
+      <div class="sfnav_wrapper">
+        <input type="text" id="sfnav_quickSearch" autocomplete="off"/>
+        <img id="sfnav_loader" src= "${loaderURL}"/>
+        <img id="sfnav_logo" src= "${logoURL}"/>
+      </div>
+      <div class="sfnav_shadow" id="sfnav_shadow"/>
+      <div class="sfnav_output" id="sfnav_output"/>`;
+
+      document.body.appendChild(div);
+      outp = document.getElementById("sfnav_output");
+      hideLoadingIndicator();
+      initShortcuts();
+
+      omnomnom = sid;
+
+      clientId = omnomnom.split('!')[0];
+
+      hash = clientId + '!' + omnomnom.substring(omnomnom.length - 10, omnomnom.length);
 
 
+      chrome.runtime.sendMessage({
+        action:'Get Commands', 'key': hash},
+        function(response) {
+          cmds = response;
+          if(cmds == null || cmds.length == 0) {
+            cmds = {};
+            metaData = {};
+            getAllObjectMetadata();
+          } else {
+          }
+        });
+    })
 
 
   }
 
-  if(serverInstance == null || getCookie('sid') == null || getCookie('sid').split('!').length != 2) return;
+  if(serverInstance == null) return;
   else init();
 
 })();
